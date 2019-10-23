@@ -1,0 +1,80 @@
+clear all;
+
+divide = true;
+log_folders = ['VRRollTrackingLog', 'RollTrackingLog'];
+participants = 9:9;
+conditions = [1, 2, 3, 4, 5];
+
+participant_vector = repelem(participants, 5);
+condition_vector = repelem(conditions, length(participants));
+
+rmse_vector = [];
+rmsu_vector = [];
+crossover_vector = [];
+phase_margin_vector = [];
+
+for participant = participants
+    if divide
+        divide_conditions(fullfile('data', int2str(participant), 'RollTrackingLog'))
+        divide_conditions(fullfile('data', int2str(participant), 'VRRollTrackingLog'))
+    end
+    % Normal simulator
+    % C condition 
+    folder_path_c = strcat('data/', int2str(participant), '/RollTrackingLog/C');
+    saving_folder_c = strcat(int2str(participant), '/RollTrackingLog/C');
+    [mean_data_c, fft_data_c, x_c] = load_condition(folder_path_c, saving_folder_c);
+    performance_params_c = find_performance_params(mean_data_c);
+    [rmse_vector, rmsu_vector, crossover_vector, phase_margin_vector] = fill_log_vectors(performance_params_c, fft_data_c, rmse_vector, rmsu_vector, crossover_vector, phase_margin_vector);
+    
+    % CP condition 
+    folder_path_cp = strcat('data/', int2str(participant), '/RollTrackingLog/CP');
+    saving_folder_cp = strcat(int2str(participant), '/RollTrackingLog/CP');
+    [mean_data_cp, fft_data_cp, x_cp] = load_condition(folder_path_cp, saving_folder_cp);
+    performance_params_cp = find_performance_params(mean_data_cp);
+    [rmse_vector, rmsu_vector, crossover_vector, phase_margin_vector] = fill_log_vectors(performance_params_cp, fft_data_cp, rmse_vector, rmsu_vector, crossover_vector, phase_margin_vector);
+
+    % CPHF condition 
+    folder_path_cphf = strcat('data/', int2str(participant), '/RollTrackingLog/C');
+    saving_folder_cphf = strcat(int2str(participant), '/RollTrackingLog/CPHF');
+    [mean_data_cphf, fft_data_cphf, x_cphf] = load_condition(folder_path_cphf, saving_folder_cphf);
+    performance_params_cphf = find_performance_params(mean_data_cphf);
+    [rmse_vector, rmsu_vector, crossover_vector, phase_margin_vector] = fill_log_vectors(performance_params_cphf, fft_data_cphf, rmse_vector, rmsu_vector, crossover_vector, phase_margin_vector);
+
+       
+    % VR sim 
+    % C condition
+    folder_path_vr_c = strcat('data/', int2str(participant), '/VRRollTrackingLog/C');
+    saving_folder_vr_c = strcat(int2str(participant), '/VRRollTrackingLog/C');
+    [mean_data_vr_c, fft_data_vr_c, x_vr_c] = load_condition(folder_path_vr_c, saving_folder_vr_c);
+    performance_params_vr_c = find_performance_params(mean_data_vr_c);
+    [rmse_vector, rmsu_vector, crossover_vector, phase_margin_vector] = fill_log_vectors(performance_params_vr_c, fft_data_vr_c, rmse_vector, rmsu_vector, crossover_vector, phase_margin_vector);
+
+    % CP condition 
+    folder_path_vr_cp = strcat('data/', int2str(participant), '/VRRollTrackingLog/CP');
+    saving_folder_vr_cp = strcat(int2str(participant), '/VRRollTrackingLog/CP');
+    [mean_data_vr_cp, fft_data_vr_cp, x_vr_cp] = load_condition(folder_path_vr_cp, saving_folder_vr_cp);
+    performance_params_vr_cp = find_performance_params(mean_data_vr_cp);
+    [rmse_vector, rmsu_vector, crossover_vector, phase_margin_vector] = fill_log_vectors(performance_params_vr_cp, fft_data_vr_cp, rmse_vector, rmsu_vector, crossover_vector, phase_margin_vector); 
+end
+    
+% create result table 
+column_names = {'participant_id', 'condition', 'rmse', 'rmsu', 'crossover_freq', 'phase_margin'};
+row_names = 0:length(participant_vector);
+
+datatable = table(participant_vector', conditions', rmse_vector, rmsu_vector, crossover_vector, ...
+                phase_margin_vector, 'VariableNames');
+
+writetable(datatable, 'results/performance_data.csv')  
+
+
+
+function [rmse_v, rmsu_v, crossover_v, phase_v] = fill_log_vectors(performance_params, fft_data, rmse_v, rmsu_v, crossover_v, phase_v)
+    rmse_v = [rmse_v; performance_params.rmse];
+    rmsu_v = [rmsu_v; performance_params.rmsu];
+    crossover_v = [crossover_v; fft_data.crossover_freq];
+    phase_v = [phase_v; fft_data.phase_margin];
+end
+
+
+
+
